@@ -1,0 +1,5 @@
+1 create repo and clone in local
+2 open folder in vs code and setup conda virtual env - activate python 3.10
+3 install cookiecutter
+4 run cookiecutter - project structure
+5 
