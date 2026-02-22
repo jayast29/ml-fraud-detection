@@ -17,7 +17,6 @@ env/
 data/*.csv
 
 # Models
-models/*.pkl
 models/*.joblib
 
 # MLflow
