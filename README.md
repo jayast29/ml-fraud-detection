@@ -27,7 +27,7 @@ ml-fraud-detection/
 │   ├── config.py             # AWS credentials loader
 │   ├── versioning.py         # Data preprocessing + DVC
 │   ├── train.py              # XGBoost training script
-│   └── predict.py            # FastAPI prediction endpoint
+│   └── app.py                # FlaskAPI prediction endpoint
 ├── models/
 │   └── model.pkl             # Trained XGBoost model
 ├── dvc.yaml                  # DVC pipeline definition
@@ -40,7 +40,7 @@ ml-fraud-detection/
 ## ML Pipeline
 
 ```
-raw_data.csv → versioning.py → data.csv → train.py → model.pkl → predict.py → API
+raw_data.csv → versioning.py → data.csv → train.py → model.pkl → app.py → API
 ```
 
 ---
