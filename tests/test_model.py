@@ -2,7 +2,9 @@ import pytest
 import joblib
 import numpy as np
 
-model = joblib.load("models/model.pkl")
+artifact = joblib.load("models/model.pkl")
+model = artifact["model"]
+threshold = artifact["threshold"]
 
 def test_model_loads():
     assert model is not None
@@ -19,5 +21,6 @@ def test_model_probability():
 
 def test_legitimate_transaction():
     data = np.array([[1, 3, 100, 100, 100]])
-    prediction = model.predict(data)
-    assert prediction[0] == 0
+    prob = model.predict_proba(data)[0][1]
+    prediction = int(prob >= threshold)
+    assert prediction == 0
