@@ -14,7 +14,7 @@ def test_home_page(client):
     assert response.status_code == 200
 
 def test_prediction_post(client):
-    response = client.post("/", data={
+    response = client.post("/predict", data={
         "step": 1,
         "type": 4,
         "amount": 500000,
