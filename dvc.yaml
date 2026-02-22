@@ -1,0 +1,16 @@
+stages:
+  preprocess:
+    cmd: python src/versioning.py
+    deps:
+      - src/versioning.py
+      - data/raw_data.csv
+    outs:
+      - data/data.csv
+
+  train:
+    cmd: python src/train.py
+    deps:
+      - src/train.py
+      - data/data.csv
+    outs:
+      - models/model.pkl

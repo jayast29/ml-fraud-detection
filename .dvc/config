@@ -1,4 +1,5 @@
 [core]
-    remote = mylocal
-['remote "mylocal"']
-    url = ../local_s3
+    remote = myremote
+['remote "myremote"']
+    url = s3://ml-banking-fraud-detection
+    region = us-east-2
