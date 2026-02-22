@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fraud Detection</title>
+    <style>
+        body { font-family: Arial; max-width: 600px; margin: 50px auto; padding: 20px; }
+        input { width: 100%; padding: 8px; margin: 5px 0 15px 0; box-sizing: border-box; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; cursor: pointer; }
+        .fraud { color: red; font-size: 20px; font-weight: bold; }
+        .safe { color: green; font-size: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h2>Banking Fraud Detection</h2>
+    <form method="POST">
+        <label>Step:</label>
+        <input type="number" name="step" value="1" required>
+        <label>Type (0=CASH_IN, 1=CASH_OUT, 2=DEBIT, 3=PAYMENT, 4=TRANSFER):</label>
+        <input type="number" name="type" value="2" required>
+        <label>Amount:</label>
+        <input type="number" step="0.01" name="amount" required>
+        <label>Balance Diff Origin:</label>
+        <input type="number" step="0.01" name="balance_diff_orig" required>
+        <label>Balance Diff Destination:</label>
+        <input type="number" step="0.01" name="balance_diff_dest" required>
+        <button type="submit">Check Fraud</button>
+    </form>
+
+    {% if result %}
+    <hr>
+    <h3>Result:</h3>
+    <p class="{{ 'fraud' if result.fraud else 'safe' }}">
+        {{ '⚠️ FRAUD DETECTED' if result.fraud else '✅ LEGITIMATE TRANSACTION' }}
+    </p>
+    <p>Probability: {{ result.probability }}</p>
+    {% endif %}
+</body>
+</html>

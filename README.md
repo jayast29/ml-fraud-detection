@@ -84,27 +84,6 @@ dvc repro
 
 ---
 
-## API Usage
-
-Start the server:
-```bash
-python src/predict.py
-```
-
-Make a prediction:
-```bash
-curl -X POST "http://localhost:8000/predict" \
-  -H "Content-Type: application/json" \
-  -d '{"step": 1, "type": 2, "amount": 9839.64, "balance_diff_orig": 170136.0, "balance_diff_dest": 0.0}'
-```
-
-Response:
-```json
-{"fraud": true, "probability": 1.0}
-```
-
----
-
 ## Experiment Tracking
 
 All experiments tracked on DagsHub MLflow:
