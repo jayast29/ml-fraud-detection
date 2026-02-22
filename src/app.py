@@ -10,7 +10,11 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder='templates')
-model = joblib.load(os.path.join(os.path.dirname(__file__), '../models/model.pkl'))
+artifact = joblib.load(os.path.join(os.path.dirname(__file__), '../models/model.pkl'))
+model = artifact["model"]
+threshold = artifact["threshold"]
+features = artifact["features"]
+
 
 # Prometheus metrics
 REQUEST_COUNT = Counter('fraud_request_total', 'Total prediction requests')
@@ -43,13 +47,14 @@ def predict():
             float(request.form["balance_diff_dest"])
         ]])
 
-        prediction = model.predict(data)[0]
         probability = model.predict_proba(data)[0][1]
+        prediction = int(probability >= threshold)
 
         result = {
             "fraud": bool(prediction),
-            "probability": round(float(probability), 4)
-        }
+            "probability": round(float(probability), 4),
+            "threshold": round(float(threshold), 4)
+}
 
         if result["fraud"]:
             FRAUD_COUNT.inc()
