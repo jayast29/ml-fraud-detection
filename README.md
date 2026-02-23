@@ -1,12 +1,8 @@
-# Banking Fraud Detection System
+## Banking Fraud Detection System
 
-An end-to-end MLOps pipeline for detecting fraudulent financial transactions using the PaySim synthetic dataset.
+An end-to-end MLOps pipeline for detecting fraudulent financial transactions using the PaySim synthetic mobile money dataset. The system combines machine learning with production engineering practices - from data versioning and experiment tracking to containerized deployment on AWS EKS with real-time Prometheus/Grafana monitoring.
 
-## Project Overview
-
-This project builds a fraud detection system using machine learning and MLOps best practices including experiment tracking, data versioning, model serving via REST API, and real-time monitoring.
-
-**Dataset:** PaySim — 6.3M synthetic mobile money transactions with 0.13% fraud rate.
+![Architecture](project_architecture.png)
 
 ---
 
@@ -17,64 +13,15 @@ This project builds a fraud detection system using machine learning and MLOps be
 | ML | XGBoost, Scikit-learn |
 | Experiment Tracking | MLflow, DagsHub |
 | Data Versioning | DVC, AWS S3 |
-| Model Serving | Flask |
+| Model Serving | Flask, Gunicorn |
 | Monitoring | Prometheus, Grafana |
 | CI/CD | GitHub Actions |
-| Containerization | Docker |
-| Cloud | AWS S3, ECR, EKS |
+| Containerization | Docker, AWS ECR |
+| Cloud | AWS S3, EC2, EKS |
 
 ---
 
-## Project Structure
-
-```
-ml-fraud-detection/
-├── data/
-│   ├── raw_data.csv                  # Original PaySim dataset
-│   ├── data.csv                      # Preprocessed (DVC tracked)
-│   └── sample.csv                    # Sample for development
-├── notebooks/
-│   ├── 00_eda_feature_engineering.ipynb
-│   ├── 01_logistic_regression.ipynb
-│   ├── 02_random_forest.ipynb
-│   └── 03_xgboost.ipynb
-├── src/
-│   ├── config.py                     # AWS credentials loader
-│   ├── versioning.py                 # Data preprocessing + DVC
-│   ├── train.py                      # XGBoost training script
-│   └── app.py                        # Flask app + Prometheus metrics
-├── tests/
-│   ├── test_app.py                   # Flask app tests
-│   └── test_model.py                 # Model tests
-├── models/
-│   └── model.pkl                     # Trained XGBoost artifact
-├── .github/
-│   └── workflows/
-│       └── ci.yml                    # GitHub Actions CI pipeline
-├── dvc.yaml                          # DVC pipeline definition
-├── dvc.lock                          # Pipeline state lock
-├── Dockerfile                        # Docker image definition
-├── docker-compose.yml                # Flask + Prometheus + Grafana
-├── prometheus.yml                    # Prometheus scrape config
-└── .env                              # AWS + DagsHub credentials (not committed)
-```
-
----
-
-## ML Pipeline
-
-```
-raw_data.csv → versioning.py → data.csv → train.py → model.pkl → app.py → API
-```
-
-Run full pipeline:
-```bash
-dvc repro
-```
-
----
-
-## Model Comparison
+### Model Results
 
 | Model | ROC-AUC | Recall | PR-AUC |
 |---|---|---|---|
@@ -82,71 +29,58 @@ dvc repro
 | Random Forest | 0.998 | 0.78 | 0.83 |
 | **XGBoost (tuned)** | **0.998** | **0.96** | **0.86** |
 
-XGBoost selected as final model with optimal decision threshold of 0.9084 for best precision-recall balance.
+### XGBoost Configuration
+- `max_depth=4`, `learning_rate=0.05`, `n_estimators=200`
+- `min_child_weight=50` — prevents overfitting on rare fraud samples
+- `scale_pos_weight=773` — handles 0.13% class imbalance
+- `tree_method=hist` — fast histogram-based training
+- **Decision threshold: 0.9084** — tuned via precision-recall curve for optimal F1
 
 ---
 
-## Fraud Detection Pattern
+### Fraud Detection Pattern
 
-Fraud in this dataset follows a specific pattern:
-- Transaction type: TRANSFER or CASH_OUT
-- Origin account balance completely wiped out
-- Destination balance unchanged after transaction
-
----
-
-## Setup
-
-```bash
-# Clone repo
-git clone https://github.com/jayast29/ml-fraud-detection
-cd ml-fraud-detection
-
-# Create environment
-conda create -n mlops python=3.10
-conda activate mlops
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Add credentials
-cp .env.example .env
-# Fill in AWS and DagsHub credentials
-
-# Pull data from S3
-dvc pull
-
-# Run pipeline
-dvc repro
-
-# Start app
-python src/app.py
-```
+The model identifies fraudulent transactions by detecting patterns where origin account balances are completely wiped while destination balances remain unchanged - a signature pattern of account takeover fraud. The model learned that fraud in TRANSFER/CASH_OUT transactions follows:
+- Origin balance completely wiped (`balance_diff_orig` = amount)
+- Destination balance unchanged (`balance_diff_dest` = 0)
 
 ---
-
 
 ## Monitoring
 
-Prometheus metrics available at `http://localhost:5000/metrics`:
+![Grafana Dashboard](grafana/grafana_monitoring.png)
+
+Prometheus metrics:
 - `fraud_request_total` — total predictions
-- `fraud_detected_total` — total fraud detected
-- `legit_detected_total` — total legitimate transactions
-- `high_risk_total` — transactions with probability > 0.8
-- `fraud_probability_avg` — average fraud probability
-- `fraud_request_latency_seconds` — response time
+- `fraud_detected_total` — fraud flagged
+- `legit_detected_total` — legitimate transactions
+- `fraud_probability_avg` — running average probability
+- `fraud_request_latency_seconds` — response latency
 
 ---
 
-## CI/CD
+## CI/CD + Deployment
 
-GitHub Actions runs on every push to `main`:
-1. Install dependencies
-2. Run tests (`pytest tests/ -v`)
+### GitHub Actions Pipeline
+Every push to `main` triggers the following workflow automatically:
+
+1. **Test** — runs `pytest tests/ -v` across model and app tests
+2. **Build** — builds Docker image using `python:3.10-slim` base
+3. **Push** — authenticates with AWS and pushes image to ECR (`fraud-detection:latest`)
+4. **Deploy** — EKS pulls latest image and rolls out updated pods
+
+### AWS Infrastructure
+- **ECR** — stores versioned Docker images (`fraud-detection:latest`)
+- **EKS** — Kubernetes cluster runs Flask app as pods with auto-scaling
+- **docker-compose** — local and EC2 orchestration of Flask + Prometheus + Grafana
+
+### Kubernetes Flow
+```
+GitHub Actions → docker build → ECR push → EKS pull → Flask pods → /metrics → Prometheus → Grafana
+```
 
 ---
 
 ## Experiment Tracking
 
-All experiments tracked on DagsHub MLflow:
-[https://dagshub.com/jayast29/ml-fraud-detection](https://dagshub.com/jayast29/ml-fraud-detection)
+[DagsHub MLflow](https://dagshub.com/jayast29/ml-fraud-detection)
