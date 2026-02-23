@@ -48,7 +48,7 @@ The model identifies fraudulent transactions by detecting patterns where origin 
 
 ## Monitoring
 
-![Grafana Dashboard](grafana/grafana_monitoring.png)
+![Grafana Dashboard](grafana/grafana_dashboard.png)
 
 Prometheus metrics:
 - `fraud_request_total` — total predictions
